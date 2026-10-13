@@ -271,7 +271,7 @@ class Server:
         cmd = [str(exe), "-m", str(model), "--port", str(self.port), "--host", "127.0.0.1", "-c", str(self.ctx),
                "-t", str(os.cpu_count() or 4), "--jinja", "--no-webui"]
         if "draft" in self.variant:
-            cmd += ["-md", str(hf_file(*self.variant["draft"])), "--draft-max", "8", "--draft-min", "1"]
+            cmd += ["-md", str(hf_file(*self.variant["draft"])), "--spec-draft-n-max", "8"]
         env = dict(os.environ, LD_LIBRARY_PATH=str(exe.parent))
         t = time.monotonic()
         self.log = open(OUT / "server.log", "w")

@@ -57,7 +57,7 @@ def run(engine: str) -> None:
         load = time.time() - t_load
         for i, text in enumerate(LINES):
             t = time.time()
-            wav = model.generate(text=text, reference_wav_path=REF, cfg_value=2.0, inference_timesteps=10, seed=42)
+            wav = model.generate(text=text, reference_wav_path=REF, cfg_value=2.0, inference_timesteps=10)
             sf.write(out / f"line{i:02d}.wav", wav, sr)
             rows.append({"seconds": len(wav) / sr, "took": time.time() - t})
             print(engine, i, rows[-1], flush=True)

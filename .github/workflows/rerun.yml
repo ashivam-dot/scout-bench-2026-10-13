@@ -1,0 +1,45 @@
+name: rerun
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  spec:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -q requests misaki
+      - run: python bench_llm.py gemma-4-12b-spec-e2b
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: llm-gemma-4-12b-spec-e2b
+          path: out/
+  voxcpm2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+      - run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: |
+          pip install -q torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install -q voxcpm soundfile numpy
+      - run: python bench_tts.py voxcpm2
+      - run: |
+          pip install -q faster-whisper speechbrain
+          python score_tts.py out
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: tts-voxcpm2-scored
+          path: |
+            out/
+            scores.json
