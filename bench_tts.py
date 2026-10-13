@@ -6,6 +6,7 @@ usage: python bench_tts.py <engine>   -> out/<engine>/lineNN.wav + out/<engine>/
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -13,7 +14,7 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 
-LINES = json.loads(Path("lines_hi.json").read_text(encoding="utf-8"))
+LINES = json.loads(Path(os.environ.get("LINES_FILE", "lines_hi.json")).read_text(encoding="utf-8"))
 REF = "ref.wav"  # 9 s trimmed from rebuilt-in-3d tts/voices/india.wav
 
 
@@ -42,10 +43,11 @@ def run(engine: str) -> None:
         model = OmniVoice.from_pretrained("k2-fsa/OmniVoice", device_map="cpu", dtype=torch.float32,
                                           asr_device="cpu")
         prompt = model.create_voice_clone_prompt(ref_audio=REF, ref_text=None)
+        extra = {"speed": float(os.environ["OMNI_SPEED"])} if os.environ.get("OMNI_SPEED") else {}
         load = time.time() - t_load
         for i, text in enumerate(LINES):
             t = time.time()
-            audio = model.generate(text=text, voice_clone_prompt=prompt, num_step=steps)
+            audio = model.generate(text=text, voice_clone_prompt=prompt, num_step=steps, **extra)
             wav = np.asarray(audio[0], dtype=np.float32)
             sf.write(out / f"line{i:02d}.wav", wav, 24000)
             rows.append({"seconds": len(wav) / 24000, "took": time.time() - t})

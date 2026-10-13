@@ -1,0 +1,63 @@
+name: numbers
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  LINES_FILE: lines_hi_words.json
+jobs:
+  chatterbox:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install -q chatterbox-tts==0.1.7 soundfile numpy --extra-index-url https://download.pytorch.org/whl/cpu
+      - run: python bench_tts.py chatterbox
+      - uses: actions/upload-artifact@v6
+        with:
+          name: num-chatterbox
+          path: out/
+  omnivoice:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      OMNI_SPEED: "0.85"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: |
+          pip install -q torch==2.8.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -q omnivoice soundfile numpy
+      - run: python bench_tts.py omnivoice-fast
+      - uses: actions/upload-artifact@v6
+        with:
+          name: num-omnivoice-fast
+          path: out/
+  score:
+    needs: [chatterbox, omnivoice]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v6
+        with:
+          path: takes
+          merge-multiple: true
+      - run: |
+          pip install -q torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install -q faster-whisper speechbrain soundfile numpy
+      - run: python score_tts.py takes
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: num-scores
+          path: scores.json

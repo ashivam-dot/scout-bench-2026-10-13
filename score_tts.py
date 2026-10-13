@@ -6,6 +6,7 @@ usage: python score_tts.py <dir with engine subfolders> -> scores.json
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 import unicodedata
@@ -16,7 +17,7 @@ import soundfile as sf
 import torch
 import torchaudio
 
-LINES = json.loads(Path("lines_hi.json").read_text(encoding="utf-8"))
+LINES = json.loads(Path(os.environ.get("LINES_FILE", "lines_hi.json")).read_text(encoding="utf-8"))
 
 
 def norm(s: str) -> str:
