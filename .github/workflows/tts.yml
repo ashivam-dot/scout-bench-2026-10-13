@@ -1,0 +1,64 @@
+name: tts
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synth:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chatterbox, omnivoice, omnivoice-fast, voxcpm2]
+    env:
+      ENGINE: ${{ matrix.engine }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Free disk
+        run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
+      - name: Install
+        run: |
+          case "$ENGINE" in
+            chatterbox) pip install -q chatterbox-tts==0.1.7 --extra-index-url https://download.pytorch.org/whl/cpu ;;
+            omnivoice*) pip install -q torch==2.8.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cpu && pip install -q omnivoice soundfile ;;
+            voxcpm2) pip install -q torch torchaudio --index-url https://download.pytorch.org/whl/cpu && pip install -q voxcpm soundfile ;;
+          esac
+          pip install -q soundfile numpy
+      - name: Synthesize
+        run: python bench_tts.py "$ENGINE"
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: tts-${{ matrix.engine }}
+          path: out/
+  score:
+    needs: synth
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v6
+        with:
+          path: takes
+          merge-multiple: true
+      - run: cp -r baseline/gemini-sulafat takes/ && ls -R takes | head -60
+      - run: |
+          pip install -q torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install -q faster-whisper speechbrain soundfile numpy
+      - run: python score_tts.py takes
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: tts-scores
+          path: |
+            scores.json
+            takes/

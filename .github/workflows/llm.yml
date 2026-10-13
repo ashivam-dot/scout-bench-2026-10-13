@@ -1,0 +1,30 @@
+name: llm
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bench:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [gemma-4-12b, gemma-4-12b-spec-e2b, gemma-4-e4b, qwen3.5-9b, qwen3.5-35b-a3b]
+    env:
+      VARIANT: ${{ matrix.variant }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Free disk
+        run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL && df -h / && free -g && nproc
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -q requests misaki
+      - name: Bench
+        run: python bench_llm.py "$VARIANT"
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: llm-${{ matrix.variant }}
+          path: out/
