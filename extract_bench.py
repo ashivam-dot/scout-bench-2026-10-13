@@ -110,4 +110,5 @@ async def main():
     open(sys.argv[1] if len(sys.argv) > 1 else "extract.json", "w").write(json.dumps(rows, indent=1))
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

@@ -1,0 +1,15 @@
+name: extract2
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  bench:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q trafilatura crawl4ai curl_cffi && crawl4ai-setup
+      - run: python extract_bench2.py
