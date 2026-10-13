@@ -71,9 +71,10 @@ def probe(item):
     return row
 
 
-with ThreadPoolExecutor(8) as pool:
-    rows = list(pool.map(probe, FEEDS.items()))
-for r in rows:
-    print(f"{r['outlet']:<26} feed={r['feed']:<5} items={r['items']:<4} article_text={r['text_chars']:<6} {r['note']}")
-if len(sys.argv) > 1:
-    open(sys.argv[1], "w").write(json.dumps(rows, indent=1))
+if __name__ == "__main__":
+    with ThreadPoolExecutor(8) as pool:
+        rows = list(pool.map(probe, FEEDS.items()))
+    for r in rows:
+        print(f"{r['outlet']:<26} feed={r['feed']:<5} items={r['items']:<4} article_text={r['text_chars']:<6} {r['note']}")
+    if len(sys.argv) > 1:
+        open(sys.argv[1], "w").write(json.dumps(rows, indent=1))
