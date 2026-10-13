@@ -1,0 +1,14 @@
+name: trends
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - run: python3 trends_test.py gdelt
+      - run: python3 trends_test.py pageviews
+      - run: python3 trends_test.py ytsuggest
